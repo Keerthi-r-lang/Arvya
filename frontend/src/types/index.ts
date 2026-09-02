@@ -38,3 +38,37 @@ export type AuditLog = {
   created_at: string;
 };
 
+export type RecommendationItem = {
+  product_id: number;
+  role: string;
+  original_price_paise: number;
+  proposed_price_paise: number | null;
+  quantity: number;
+};
+
+export type Recommendation = {
+  id: number;
+  agent_run_id: number;
+  type: "bundle" | "upsell" | "campaign";
+  status: "pending_approval" | "approved" | "rejected";
+  title: string;
+  rationale: string;
+  evidence_json: { signals?: string[]; products?: string[]; [key: string]: unknown };
+  action_payload_json: { original_price_paise?: number; proposed_price_paise?: number; discount_percent?: number; campaign_copy?: string; [key: string]: unknown };
+  impact_json: { estimated_monthly_revenue_uplift_inr: number; estimated_incremental_orders: number; confidence_range: string; assumptions: string[] };
+  confidence_score: number;
+  approved_at: string | null;
+  rejected_reason: string | null;
+  created_at: string;
+  items: RecommendationItem[];
+};
+
+export type AgentRun = {
+  id: number;
+  merchant_id: number;
+  status: string;
+  trigger_type: string;
+  model_provider: string;
+  started_at: string;
+  completed_at: string | null;
+};
