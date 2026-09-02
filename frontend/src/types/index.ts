@@ -106,6 +106,22 @@ export type PaymentLink = {
   provider: string;
   short_url: string | null;
   coupon_code: string | null;
+  customer_email: string;
   failure_reason: string | null;
   created_at: string;
+};
+
+export type CommerceMetrics = {
+  actual_paid_revenue_paise: number;
+  payment_links_created: number;
+  paid_links: number;
+  approved_offers: number;
+  estimated_monthly_uplift_inr: number;
+};
+
+export type DashboardOverview = {
+  merchant: { id: number; name: string; industry: string };
+  catalog: CatalogSummary;
+  growth_agent_status: string;
+  commerce_metrics: CommerceMetrics;
 };

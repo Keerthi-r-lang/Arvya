@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import audit, auth, catalog, dashboard, recommendations, shopping
+from app.api.v1 import audit, auth, catalog, dashboard, recommendations, shopping, webhooks
 import app.db.models  # noqa: F401 - imports every ORM model before metadata creation
 from app.core.config import get_settings
 from app.db.base import Base
@@ -34,6 +34,7 @@ app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(audit.router, prefix="/api/v1")
 app.include_router(recommendations.router, prefix="/api/v1")
 app.include_router(shopping.router, prefix="/api/v1")
+app.include_router(webhooks.router, prefix="/api/v1")
 
 
 @app.get("/health")

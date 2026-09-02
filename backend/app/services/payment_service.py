@@ -76,3 +76,13 @@ def create_checkout_link(db: Session, recommendation_id: int, request: CheckoutR
 
 def list_payment_links(db: Session, merchant_id: int) -> list[PaymentLink]:
     return list(db.scalars(select(PaymentLink).where(PaymentLink.merchant_id == merchant_id).order_by(PaymentLink.created_at.desc())))
+
+
+def retry_payment_link(db: Session, merchant_id: int, payment_link_id: int) -> PaymentLink:
+    payment_link = db.scalar(select(PaymentLink).where(PaymentLink.id == payment_link_id, PaymentLink.merchant_id == merchant_id))
+    if payment_link is None:
+        raise HTTPException(status_code=404, detail="Payment link not found")
+    if payment_link.status not in {"execution_failed", "demo_created"}:
+        raise HTTPException(status_code=409, detail="Only failed or demo payment links can be retried")
+    request = CheckoutRequest(customer_name=payment_link.customer_name, customer_email=payment_link.customer_email, coupon_code=payment_link.coupon_code)
+    return create_checkout_link(db, payment_link.recommendation_id, request)

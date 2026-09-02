@@ -48,6 +48,7 @@ class PaymentLinkResponse(BaseModel):
     provider: str
     short_url: str | None
     coupon_code: str | None
+    customer_email: str
     failure_reason: str | None
     created_at: datetime
 
