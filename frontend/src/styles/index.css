@@ -7,3 +7,17 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; background: #020617; }
 button { font: inherit; }
+
+/* Day 1 theme layer: preserves component contrast while providing an accessible light workspace. */
+.theme-light { color: #172033; }
+.theme-light.bg-slate-950, .theme-light .bg-slate-950 { background-color: #f5f7fb !important; }
+.theme-light .bg-slate-900, .theme-light .bg-slate-900\/80, .theme-light .bg-slate-900\/70 { background-color: #ffffff !important; }
+.theme-light .from-slate-900, .theme-light .to-slate-900 { --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important; --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important; }
+.theme-light .border-white\/10, .theme-light .border-white\/5 { border-color: #dfe5f1 !important; }
+.theme-light .bg-white\/\[\.03\], .theme-light .bg-white\/\[0\.03\] { background-color: #f7f8fc !important; }
+.theme-light .text-slate-100, .theme-light .text-white { color: #172033 !important; }
+.theme-light .text-slate-200 { color: #26334a !important; }
+.theme-light .text-slate-300, .theme-light .text-slate-400 { color: #536176 !important; }
+.theme-light .text-slate-500, .theme-light .text-slate-600 { color: #718097 !important; }
+.theme-light .bg-slate-700 { background-color: #d9e0ec !important; }
+.theme-light .shadow-black\/30, .theme-light .shadow-slate-950\/20 { --tw-shadow-color: rgb(71 85 105 / .12) !important; }

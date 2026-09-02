@@ -25,19 +25,39 @@ SEED_DATA = [
         ("PB-SS-01", "Mineral SPF 40", "Sun Protection", 62900, 23500, 50),
         ("PB-SE-01", "Glow Renewal Serum", "Serum", 79900, 32200, 45),
     ]),
+    ("Bean Street", "hello@beanstreet.demo", "Coffee & beverages", [
+        ("BS-BR-01", "South Indian Filter Coffee", "Coffee", 34900, 12800, 150),
+        ("BS-BR-02", "Single Origin Arabica Beans", "Coffee", 64900, 25500, 80),
+        ("BS-AC-01", "Stainless Steel Coffee Filter", "Brewing Equipment", 79900, 33000, 45),
+        ("BS-AC-02", "Ceramic Pour Over Dripper", "Brewing Equipment", 99900, 42000, 32),
+        ("BS-GF-01", "Coffee Discovery Gift Box", "Gift Sets", 119900, 52000, 20),
+    ]),
+    ("Urban Trail", "hello@urbantrail.demo", "Fitness & outdoor", [
+        ("UT-YM-01", "Non-Slip Yoga Mat", "Yoga", 89900, 34000, 72),
+        ("UT-YB-01", "Resistance Band Set", "Strength Training", 59900, 21000, 95),
+        ("UT-YB-02", "Cork Yoga Block Pair", "Yoga", 49900, 18000, 60),
+        ("UT-HY-01", "Insulated Steel Water Bottle", "Accessories", 74900, 28500, 110),
+        ("UT-GF-01", "Weekend Wellness Kit", "Gift Sets", 189900, 79000, 25),
+    ]),
 ]
 
 
 def seed_database(db: Session) -> None:
-    if db.scalar(select(Merchant.id).limit(1)) is not None:
-        return
     for name, email, industry, products in SEED_DATA:
-        merchant = Merchant(name=name, email=email, industry=industry)
-        db.add(merchant)
-        db.flush()
+        merchant = db.scalar(select(Merchant).where(Merchant.email == email))
+        is_new_merchant = merchant is None
+        if merchant is None:
+            merchant = Merchant(name=name, email=email, industry=industry)
+            db.add(merchant)
+            db.flush()
+        seeded_count = 0
         for sku, product_name, category, price, cost, inventory in products:
-            db.add(Product(merchant_id=merchant.id, sku=sku, name=product_name, category=category, price_paise=price, cost_paise=cost, inventory_count=inventory))
-        write_audit_log(db, merchant.id, "merchant_onboarded", "merchant", str(merchant.id), "Demo merchant and catalog were initialized.", actor_type="system", actor_id="seed")
-        write_audit_log(db, merchant.id, "catalog_seeded", "catalog", str(merchant.id), f"Initialized {len(products)} demo products.", actor_type="system", actor_id="seed")
+            exists = db.scalar(select(Product.id).where(Product.merchant_id == merchant.id, Product.sku == sku))
+            if exists is None:
+                db.add(Product(merchant_id=merchant.id, sku=sku, name=product_name, category=category, price_paise=price, cost_paise=cost, inventory_count=inventory))
+                seeded_count += 1
+        if is_new_merchant:
+            write_audit_log(db, merchant.id, "merchant_onboarded", "merchant", str(merchant.id), "Demo merchant and catalog were initialized.", actor_type="system", actor_id="seed")
+        if seeded_count:
+            write_audit_log(db, merchant.id, "catalog_seeded", "catalog", str(merchant.id), f"Initialized {seeded_count} demo products.", actor_type="system", actor_id="seed")
     db.commit()
-
