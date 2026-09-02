@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models.merchant import Merchant
 from app.db.models.product import Product
+from app.db.models.coupon import Coupon
 from app.services.audit_service import write_audit_log
 
 SEED_DATA = [
@@ -60,4 +61,7 @@ def seed_database(db: Session) -> None:
             write_audit_log(db, merchant.id, "merchant_onboarded", "merchant", str(merchant.id), "Demo merchant and catalog were initialized.", actor_type="system", actor_id="seed")
         if seeded_count:
             write_audit_log(db, merchant.id, "catalog_seeded", "catalog", str(merchant.id), f"Initialized {seeded_count} demo products.", actor_type="system", actor_id="seed")
+        coupon_code = {"Beauty & wellness": "GLOW10", "Coffee & beverages": "BREW10", "Fitness & outdoor": "MOVE10"}.get(industry)
+        if coupon_code and db.scalar(select(Coupon.id).where(Coupon.merchant_id == merchant.id, Coupon.code == coupon_code)) is None:
+            db.add(Coupon(merchant_id=merchant.id, code=coupon_code, discount_percent=10, max_discount_paise=20000, min_order_paise=50000))
     db.commit()

@@ -72,3 +72,40 @@ export type AgentRun = {
   started_at: string;
   completed_at: string | null;
 };
+
+export type ShoppingOffer = {
+  recommendation_id: number;
+  merchant_id: number;
+  merchant_name: string;
+  merchant_industry: string;
+  title: string;
+  type: string;
+  products: string[];
+  original_price_paise: number | null;
+  offer_price_paise: number;
+  coupon_code: string | null;
+  coupon_discount_paise: number;
+  final_price_paise: number;
+  relevance_score: number;
+  explanation: string;
+  confidence_score: number;
+};
+
+export type ShoppingSearchResponse = {
+  query: string;
+  recommendation_summary: string;
+  offers: ShoppingOffer[];
+};
+
+export type PaymentLink = {
+  id: number;
+  recommendation_id: number;
+  amount_paise: number;
+  currency: string;
+  status: string;
+  provider: string;
+  short_url: string | null;
+  coupon_code: string | null;
+  failure_reason: string | null;
+  created_at: string;
+};

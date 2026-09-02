@@ -1,7 +1,7 @@
-import { BarChart3, BookOpenCheck, Boxes, LayoutDashboard, Moon, Sparkles, Sun } from "lucide-react";
+import { BarChart3, BookOpenCheck, Boxes, LayoutDashboard, Moon, Search, Sparkles, Sun } from "lucide-react";
 import type { Merchant } from "../../types";
 
-type Props = { merchant: Merchant; activePage: "dashboard" | "catalog" | "recommendations"; onNavigate: (page: "dashboard" | "catalog" | "recommendations") => void; onLogout: () => void; theme: "dark" | "light"; onThemeToggle: () => void; children: React.ReactNode };
+type Props = { merchant: Merchant; activePage: "dashboard" | "catalog" | "recommendations" | "shopping"; onNavigate: (page: "dashboard" | "catalog" | "recommendations" | "shopping") => void; onLogout: () => void; theme: "dark" | "light"; onThemeToggle: () => void; children: React.ReactNode };
 
 export function AppShell({ merchant, activePage, onNavigate, onLogout, theme, onThemeToggle, children }: Props) {
   return <div className={`min-h-screen bg-slate-950 text-slate-100 ${theme === "light" ? "theme-light" : ""}`}>
@@ -11,6 +11,7 @@ export function AppShell({ merchant, activePage, onNavigate, onLogout, theme, on
         <Nav icon={<LayoutDashboard size={18} />} label="Overview" active={activePage === "dashboard"} onClick={() => onNavigate("dashboard")} />
         <Nav icon={<Boxes size={18} />} label="Catalog" active={activePage === "catalog"} onClick={() => onNavigate("catalog")} />
         <Nav icon={<Sparkles size={18} />} label="Growth opportunities" active={activePage === "recommendations"} onClick={() => onNavigate("recommendations")} />
+        <Nav icon={<Search size={18} />} label="Shopping agent" active={activePage === "shopping"} onClick={() => onNavigate("shopping")} />
         <Nav icon={<BarChart3 size={18} />} label="Campaigns" muted />
         <Nav icon={<BookOpenCheck size={18} />} label="Audit trail" muted />
       </nav>
