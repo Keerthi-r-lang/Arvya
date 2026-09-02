@@ -30,12 +30,26 @@ def create_checkout_link(db: Session, recommendation_id: int, request: CheckoutR
     amount = base_amount - _discount(coupon, base_amount)
     key = checkout_idempotency_key(recommendation.id, request.customer_email, coupon.code if coupon else None)
     existing = db.scalar(select(PaymentLink).where(PaymentLink.merchant_id == recommendation.merchant_id, PaymentLink.idempotency_key == key))
-    if existing and existing.status in {"created", "issued", "paid", "demo_created"}:
+    if existing and existing.status in {"created", "issued", "paid"}:
         return existing
-    payment_link = PaymentLink(merchant_id=recommendation.merchant_id, recommendation_id=recommendation.id, amount_paise=amount, currency="INR", customer_name=request.customer_name, customer_email=request.customer_email, coupon_code=coupon.code if coupon else None, idempotency_key=key)
-    db.add(payment_link)
-    db.flush()
-    write_audit_log(db, recommendation.merchant_id, "payment_link_requested", "payment_link", str(payment_link.id), "Customer selected a merchant-approved offer for checkout.", actor_type="customer", actor_id=request.customer_email)
+    if existing and existing.status == "demo_created" and not has_razorpay_test_credentials():
+        return existing
+    if existing:
+        # A prior demo fallback or failed attempt is safe to retry when the customer submits the same checkout.
+        payment_link = existing
+        payment_link.amount_paise = amount
+        payment_link.customer_name = request.customer_name
+        payment_link.customer_email = request.customer_email
+        payment_link.coupon_code = coupon.code if coupon else None
+        payment_link.status = "execution_pending"
+        payment_link.provider = "razorpay"
+        payment_link.failure_reason = None
+        payment_link.provider_response_json = {}
+    else:
+        payment_link = PaymentLink(merchant_id=recommendation.merchant_id, recommendation_id=recommendation.id, amount_paise=amount, currency="INR", customer_name=request.customer_name, customer_email=request.customer_email, coupon_code=coupon.code if coupon else None, idempotency_key=key)
+        db.add(payment_link)
+        db.flush()
+        write_audit_log(db, recommendation.merchant_id, "payment_link_requested", "payment_link", str(payment_link.id), "Customer selected a merchant-approved offer for checkout.", actor_type="customer", actor_id=request.customer_email)
     if not has_razorpay_test_credentials():
         payment_link.provider = "demo"
         payment_link.status = "demo_created"

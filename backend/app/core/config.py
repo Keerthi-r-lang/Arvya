@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +12,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
-@lru_cache
 def get_settings() -> Settings:
+    # Read current local Test Mode configuration for each integration request so a demo
+    # user can add keys without having to clear an in-memory settings cache.
     return Settings()
