@@ -21,3 +21,14 @@ button { font: inherit; }
 .theme-light .text-slate-500, .theme-light .text-slate-600 { color: #718097 !important; }
 .theme-light .bg-slate-700 { background-color: #d9e0ec !important; }
 .theme-light .shadow-black\/30, .theme-light .shadow-slate-950\/20 { --tw-shadow-color: rgb(71 85 105 / .12) !important; }
+
+/* Payment-dashboard visual system: crisp white surfaces, restrained blue actions, readable financial data. */
+.theme-light { background: #f5f7fb !important; color: #172033; }
+.theme-light aside { background: #ffffff !important; border-color: #e5eaf2 !important; }
+.theme-light header { background: #ffffff; border-color: #e5eaf2 !important; }
+.theme-light .bg-violet-500, .theme-light .bg-cyan-300 { background-color: #2b84ea !important; }
+.theme-light .text-violet-300, .theme-light .text-violet-200, .theme-light .text-cyan-200, .theme-light .text-cyan-100 { color: #2b84ea !important; }
+.theme-light .bg-violet-500\/10, .theme-light .bg-cyan-500\/5, .theme-light .bg-cyan-300\/15 { background-color: #eff7ff !important; }
+.theme-light .border-violet-400\/20, .theme-light .border-violet-400\/30, .theme-light .border-cyan-400\/20, .theme-light .border-cyan-400\/30 { border-color: #bfdbfe !important; }
+.theme-light .bg-slate-950 { background-color: #ffffff !important; }
+.theme-light input.bg-slate-950 { border-color: #d9e2ef !important; }

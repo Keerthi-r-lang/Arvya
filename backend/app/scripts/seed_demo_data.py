@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 from app.db.models.merchant import Merchant
 from app.db.models.product import Product
 from app.db.models.coupon import Coupon
+from app.db.models.agent_run import AgentRun
+from app.db.models.recommendation import Recommendation
+from app.db.models.recommendation_item import RecommendationItem
 from app.services.audit_service import write_audit_log
 
 SEED_DATA = [
@@ -42,6 +45,18 @@ SEED_DATA = [
     ]),
 ]
 
+DEMO_BUNDLE_CATEGORIES = {
+    "Beauty & wellness": ["Cleanser", "Moisturizer", "Sun Protection"],
+    "Coffee & beverages": ["Coffee", "Brewing Equipment"],
+    "Fitness & outdoor": ["Yoga", "Accessories"],
+}
+
+DEMO_BUNDLE_TITLES = {
+    "Beauty & wellness": "Daily Skincare Starter Bundle",
+    "Coffee & beverages": "Home Brewer Discovery Bundle",
+    "Fitness & outdoor": "Weekend Wellness Starter Kit",
+}
+
 
 def seed_database(db: Session) -> None:
     for name, email, industry, products in SEED_DATA:
@@ -64,4 +79,47 @@ def seed_database(db: Session) -> None:
         coupon_code = {"Beauty & wellness": "GLOW10", "Coffee & beverages": "BREW10", "Fitness & outdoor": "MOVE10"}.get(industry)
         if coupon_code and db.scalar(select(Coupon.id).where(Coupon.merchant_id == merchant.id, Coupon.code == coupon_code)) is None:
             db.add(Coupon(merchant_id=merchant.id, code=coupon_code, discount_percent=10, max_discount_paise=20000, min_order_paise=50000))
+        _seed_approved_demo_offer(db, merchant, industry)
     db.commit()
+
+
+def _seed_approved_demo_offer(db: Session, merchant: Merchant, industry: str) -> None:
+    """Seeds only clearly marked demo fixtures, so customer-agent searches work on first launch."""
+    bundle_categories = DEMO_BUNDLE_CATEGORIES.get(industry)
+    if not bundle_categories:
+        return
+    fixture_hash = f"demo-approved-offer-v1-{merchant.id}"
+    if db.scalar(select(Recommendation.id).where(Recommendation.merchant_id == merchant.id, Recommendation.recommendation_hash == fixture_hash)):
+        return
+    products = list(db.scalars(select(Product).where(Product.merchant_id == merchant.id, Product.category.in_(bundle_categories), Product.status == "active", Product.inventory_count > 0).order_by(Product.price_paise)))
+    selected = []
+    for category in bundle_categories:
+        product = next((item for item in products if item.category == category), None)
+        if product:
+            selected.append(product)
+    if len(selected) < 2:
+        return
+    original_price = sum(product.price_paise for product in selected)
+    proposed_price = int(original_price * 0.9)
+    run = AgentRun(merchant_id=merchant.id, trigger_type="demo_seed", status="completed", input_snapshot_json={"fixture": "approved_customer_agent_offer"}, model_provider="demo-fixture", prompt_version="demo-fixture-v1")
+    db.add(run)
+    db.flush()
+    recommendation = Recommendation(
+        merchant_id=merchant.id,
+        agent_run_id=run.id,
+        type="bundle",
+        status="approved",
+        title=DEMO_BUNDLE_TITLES[industry],
+        rationale="Demo merchant-approved offer, seeded so the Customer Shopping Agent can compare real catalog combinations on first launch.",
+        evidence_json={"demo_fixture": True, "signals": ["Merchant-approved demo offer", "Active in-stock catalog products", "10% bundle discount"]},
+        action_payload_json={"original_price_paise": original_price, "proposed_price_paise": proposed_price, "discount_percent": 10, "offer_type": "bundle"},
+        impact_json={"estimated_monthly_revenue_uplift_inr": round(proposed_price / 100 * 10), "estimated_incremental_orders": 10, "confidence_range": "demo", "assumptions": ["Demo data only"]},
+        confidence_score=0.8,
+        recommendation_hash=fixture_hash,
+        approved_by=merchant.id,
+    )
+    db.add(recommendation)
+    db.flush()
+    for product in selected:
+        db.add(RecommendationItem(recommendation_id=recommendation.id, product_id=product.id, role="bundle_item", original_price_paise=product.price_paise, proposed_price_paise=proposed_price))
+    write_audit_log(db, merchant.id, "demo_approved_offer_seeded", "recommendation", str(recommendation.id), "Initialized a clearly marked merchant-approved demo offer for customer-agent testing.", actor_type="system", actor_id="seed")

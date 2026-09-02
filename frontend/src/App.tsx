@@ -27,7 +27,7 @@ export default function App() {
   const [agentLoading, setAgentLoading] = useState(false);
   const [shoppingResult, setShoppingResult] = useState<ShoppingSearchResponse | null>(null);
   const [shoppingLoading, setShoppingLoading] = useState(false);
-  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("arvya_theme") as Theme) || "dark");
+  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("arvya_theme") as Theme) || "light");
 
   const loadWorkspace = async () => { const [nextProducts, nextSummary, nextActivity, nextRecommendations] = await Promise.all([getProducts(), getCatalogSummary(), getActivity(), getRecommendations()]); setProducts(nextProducts); setSummary(nextSummary); setActivity(nextActivity); setRecommendations(nextRecommendations); };
   useEffect(() => { getDemoMerchants().then(setMerchants).catch((err) => setError(err.message)).finally(() => setLoading(false)); }, []);
