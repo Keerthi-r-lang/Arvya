@@ -1,0 +1,8 @@
+import type { Product } from "../../types";
+
+const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
+
+export function ProductTable({ products }: { products: Product[] }) {
+  return <div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/80"><div className="border-b border-white/10 px-5 py-4"><h2 className="font-medium">Product catalog</h2><p className="mt-1 text-xs text-slate-500">All prices are stored safely in paise.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left text-sm"><thead className="bg-white/[0.03] text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-3">Product</th><th className="px-5 py-3">Category</th><th className="px-5 py-3">Price</th><th className="px-5 py-3">Margin data</th><th className="px-5 py-3">Inventory</th><th className="px-5 py-3">Status</th></tr></thead><tbody>{products.map((product) => <tr key={product.id} className="border-t border-white/5"><td className="px-5 py-4"><p className="font-medium text-slate-200">{product.name}</p><p className="mt-0.5 font-mono text-xs text-slate-500">{product.sku}</p></td><td className="px-5 py-4 text-slate-400">{product.category}</td><td className="px-5 py-4">{currency.format(product.price_paise / 100)}</td><td className="px-5 py-4 text-slate-400">{product.cost_paise ? "Available" : "Missing"}</td><td className="px-5 py-4">{product.inventory_count}</td><td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs ${product.status === "active" ? "bg-emerald-400/10 text-emerald-300" : "bg-slate-700 text-slate-300"}`}>{product.status}</span></td></tr>)}</tbody></table></div></div>;
+}
+
