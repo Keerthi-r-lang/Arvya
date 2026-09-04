@@ -26,3 +26,13 @@ def get_database_url() -> str:
     if database_url.startswith("postgresql://"):
         return database_url.replace("postgresql://", "postgresql+psycopg://", 1)
     return database_url
+
+
+def get_frontend_origins() -> list[str]:
+    """Return the configured browser origins, accepting a comma-separated allow-list."""
+    origins = [
+        origin.strip().rstrip("/")
+        for origin in get_settings().frontend_origin.split(",")
+        if origin.strip()
+    ]
+    return origins or ["http://localhost:5173"]
