@@ -140,3 +140,10 @@ export type DashboardOverview = {
   growth_agent_status: string;
   commerce_metrics: CommerceMetrics;
 };
+
+export type ScoreComponent = { label: string; score: number; weight: number; detail: string };
+export type DecisionEvent = { step: number; title: string; detail: string; actor: string; status: string };
+export type AuditReference = { id: number; event_type: string; detail: string; created_at: string };
+export type Guardrail = { name: string; status: "passed" | "blocked" | "review" | "neutral"; detail: string };
+export type DecisionCenter = { recommendation_id: number; title: string; recommendation_type: string; approval_status: string; confidence_score: number; confidence_formula: string; confidence_components: ScoreComponent[]; risk_score: number; risk_level: "low" | "medium" | "high"; risk_reasons: string[]; guardrails: Guardrail[]; why_selected: string[]; why_rejected: string[]; evidence_sources: string[]; original_price_paise: number; offer_price_paise: number; coupon_code: string | null; coupon_discount_paise: number; final_price_paise: number; margin_after_discount_percent: number | null; expected_monthly_uplift_inr: number; expected_incremental_orders: number; assumptions: string[]; decision_trace: DecisionEvent[]; audit_references: AuditReference[] };
+export type CommerceSimulation = { simulation_id: string; mode: string; safety_notice: string; decision: DecisionCenter; events: DecisionEvent[]; audit_references: AuditReference[] };

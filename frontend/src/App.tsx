@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getDecisionCenter, runCommerceSimulation } from "./api/decisionCenter";
 import { getActivity, getAuditLogs, getCatalogSummary, getDemoMerchants, getOverview, getProducts, login, uploadCatalog } from "./api/merchant";
 import { getPaymentLinks, retryPaymentLink } from "./api/payments";
 import { approveRecommendation, generateOpportunities, getAgentActions, getRecommendations, rejectRecommendation } from "./api/recommendations";
@@ -12,9 +13,10 @@ import { RecommendationsPage } from "./pages/RecommendationsPage";
 import { ShoppingPage } from "./pages/ShoppingPage";
 import { PaymentLinksPage } from "./pages/PaymentLinksPage";
 import { AuditTrailPage } from "./pages/AuditTrailPage";
-import type { AgentAction, AuditLog, CatalogSummary, CommerceMetrics, Merchant, PaymentLink, Product, Recommendation, ShoppingOffer, ShoppingSearchResponse } from "./types";
+import { DecisionCenterPage } from "./pages/DecisionCenterPage";
+import type { AgentAction, AuditLog, CatalogSummary, CommerceMetrics, CommerceSimulation, DecisionCenter, Merchant, PaymentLink, Product, Recommendation, ShoppingOffer, ShoppingSearchResponse } from "./types";
 
-type Page = "dashboard" | "catalog" | "recommendations" | "campaigns" | "shopping" | "payments" | "audit";
+type Page = "dashboard" | "catalog" | "recommendations" | "decision" | "campaigns" | "shopping" | "payments" | "audit";
 type Theme = "dark" | "light";
 
 export default function App() {
@@ -36,14 +38,19 @@ export default function App() {
   const [shoppingResult, setShoppingResult] = useState<ShoppingSearchResponse | null>(null);
   const [shoppingLoading, setShoppingLoading] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [decision, setDecision] = useState<DecisionCenter | null>(null);
+  const [simulation, setSimulation] = useState<CommerceSimulation | null>(null);
+  const [decisionLoading, setDecisionLoading] = useState(false);
+  const [simulationLoading, setSimulationLoading] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("arvya_theme") as Theme) || "light");
 
   const loadWorkspace = async () => {
-    const [nextProducts, nextSummary, nextActivity, nextRecommendations, nextAgentActions, nextOverview, nextPaymentLinks, nextAuditLogs] = await Promise.all([
+    const [nextProducts, nextSummary, nextActivity, nextRecommendations, nextAgentActions, nextOverview, nextPaymentLinks, nextAuditLogs, nextDecision] = await Promise.all([
       getProducts(), getCatalogSummary(), getActivity(), getRecommendations(), getAgentActions(), getOverview(), getPaymentLinks(), getAuditLogs(),
+      getDecisionCenter().catch(() => null),
     ]);
     setProducts(nextProducts); setSummary(nextSummary); setActivity(nextActivity); setRecommendations(nextRecommendations); setAgentActions(nextAgentActions);
-    setMetrics(nextOverview.commerce_metrics); setPaymentLinks(nextPaymentLinks); setAuditLogs(nextAuditLogs);
+    setMetrics(nextOverview.commerce_metrics); setPaymentLinks(nextPaymentLinks); setAuditLogs(nextAuditLogs); setDecision(nextDecision);
   };
   useEffect(() => { getDemoMerchants().then(setMerchants).catch((err) => setError(err.message)).finally(() => setLoading(false)); }, []);
   const handleLogin = async (merchantId: number) => { setLoading(true); setError(null); try { const result = await login(merchantId); localStorage.setItem("arvya_token", result.access_token); setMerchant(result.merchant); await loadWorkspace(); } catch (err) { setError(err instanceof Error ? err.message : "Could not sign in"); } finally { setLoading(false); } };
@@ -54,7 +61,8 @@ export default function App() {
   const handleShoppingSearch = async (query: string, budget: string) => { setShoppingLoading(true); setError(null); try { setShoppingResult(await searchApprovedOffers(query, budget)); } catch (err) { setError(err instanceof Error ? err.message : "Could not compare approved offers"); } finally { setShoppingLoading(false); } };
   const handleCheckout = async (offer: ShoppingOffer, name: string, email: string, idempotencyKey: string): Promise<PaymentLink | undefined> => { setShoppingLoading(true); setError(null); try { const paymentLink = await checkoutOffer(offer.recommendation_id, name, email, offer.coupon_code, idempotencyKey); await loadWorkspace(); return paymentLink; } catch (err) { setError(err instanceof Error ? err.message : "Could not create checkout"); return undefined; } finally { setShoppingLoading(false); } };
   const handlePaymentRetry = async (paymentLinkId: number) => { setPaymentLoading(true); setError(null); try { await retryPaymentLink(paymentLinkId); await loadWorkspace(); } catch (err) { setError(err instanceof Error ? err.message : "Could not retry the payment link"); } finally { setPaymentLoading(false); } };
-  const logout = () => { localStorage.removeItem("arvya_token"); setMerchant(null); setPage("dashboard"); setProducts([]); setSummary(null); setMetrics(null); setActivity([]); setAuditLogs([]); setPaymentLinks([]); setAgentActions([]); };
+  const handleSimulation = async () => { setSimulationLoading(true); setError(null); try { const next = await runCommerceSimulation(); setSimulation(next); setDecision(next.decision); await loadWorkspace(); } catch (err) { setError(err instanceof Error ? err.message : "Could not run commerce simulation"); } finally { setSimulationLoading(false); } };
+  const logout = () => { localStorage.removeItem("arvya_token"); setMerchant(null); setPage("dashboard"); setProducts([]); setSummary(null); setMetrics(null); setActivity([]); setAuditLogs([]); setPaymentLinks([]); setAgentActions([]); setDecision(null); setSimulation(null); };
   const toggleTheme = () => setTheme((current) => { const next = current === "dark" ? "light" : "dark"; localStorage.setItem("arvya_theme", next); return next; });
   if (!merchant) return <LoginPage merchants={merchants} onLogin={handleLogin} loading={loading} error={error} theme={theme} onThemeToggle={toggleTheme} />;
   if (!summary || !metrics) return <main className="grid min-h-screen place-items-center bg-slate-950 text-slate-300">Loading merchant workspace…</main>;
@@ -62,6 +70,7 @@ export default function App() {
   if (page === "dashboard") content = <DashboardPage merchant={merchant} summary={summary} metrics={metrics} activity={activity} onOpenCatalog={() => setPage("catalog")} onGenerate={handleGenerate} generating={agentLoading} />;
   if (page === "catalog") content = <CatalogPage products={products} summary={summary} onUpload={handleUpload} onBack={() => setPage("dashboard")} message={message} />;
   if (page === "recommendations") content = <RecommendationsPage recommendations={recommendations} agentActions={agentActions} loading={agentLoading} error={error} onGenerate={handleGenerate} onApprove={handleApprove} onReject={handleReject} />;
+  if (page === "decision") content = <DecisionCenterPage decision={decision} simulation={simulation} loading={decisionLoading} running={simulationLoading} error={error} onRunSimulation={handleSimulation} />;
   if (page === "campaigns") content = <CampaignsPage campaigns={recommendations.filter((recommendation) => recommendation.type === "campaign")} loading={agentLoading} onGenerate={handleGenerate} onApprove={handleApprove} onReject={handleReject} />;
   if (page === "payments") content = <PaymentLinksPage links={paymentLinks} loading={paymentLoading} onRetry={handlePaymentRetry} />;
   if (page === "audit") content = <AuditTrailPage events={auditLogs} />;
