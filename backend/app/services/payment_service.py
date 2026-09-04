@@ -1,4 +1,4 @@
-from hashlib import sha256
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -21,15 +21,19 @@ def _get_approved_recommendation(db: Session, recommendation_id: int) -> Recomme
     return recommendation
 
 
-def create_checkout_link(db: Session, recommendation_id: int, request: CheckoutRequest) -> PaymentLink:
+def create_checkout_link(db: Session, recommendation_id: int, request: CheckoutRequest, checkout_token: str | None = None, existing_payment_link_id: int | None = None) -> PaymentLink:
     recommendation = _get_approved_recommendation(db, recommendation_id)
     base_amount = recommendation.action_payload_json.get("proposed_price_paise") or recommendation.action_payload_json.get("original_price_paise")
     if not base_amount:
         raise HTTPException(status_code=422, detail="Approved offer does not have a payable amount")
     coupon = _best_coupon(db, recommendation.merchant_id, base_amount, request.coupon_code)
     amount = base_amount - _discount(coupon, base_amount)
-    key = checkout_idempotency_key(recommendation.id, request.customer_email, coupon.code if coupon else None)
-    existing = db.scalar(select(PaymentLink).where(PaymentLink.merchant_id == recommendation.merchant_id, PaymentLink.idempotency_key == key))
+    key = checkout_idempotency_key(recommendation.id, request.customer_email, coupon.code if coupon else None, checkout_token)
+    existing = (
+        db.scalar(select(PaymentLink).where(PaymentLink.id == existing_payment_link_id, PaymentLink.merchant_id == recommendation.merchant_id))
+        if existing_payment_link_id
+        else db.scalar(select(PaymentLink).where(PaymentLink.merchant_id == recommendation.merchant_id, PaymentLink.idempotency_key == key))
+    )
     if existing and existing.status in {"created", "issued", "paid"}:
         return existing
     if existing and existing.status == "demo_created" and not has_razorpay_test_credentials():
@@ -45,6 +49,8 @@ def create_checkout_link(db: Session, recommendation_id: int, request: CheckoutR
         payment_link.provider = "razorpay"
         payment_link.failure_reason = None
         payment_link.provider_response_json = {}
+        payment_link.razorpay_payment_link_id = None
+        payment_link.short_url = None
     else:
         payment_link = PaymentLink(merchant_id=recommendation.merchant_id, recommendation_id=recommendation.id, amount_paise=amount, currency="INR", customer_name=request.customer_name, customer_email=request.customer_email, coupon_code=coupon.code if coupon else None, idempotency_key=key)
         db.add(payment_link)
@@ -57,12 +63,15 @@ def create_checkout_link(db: Session, recommendation_id: int, request: CheckoutR
         db.commit()
         return payment_link
     try:
-        reference_id = f"arvya-{payment_link.id}-{key[:8]}"
+        # Razorpay requires each reference ID to be unique.  Include a new
+        # attempt marker so an expired/failed local checkout can be safely reissued.
+        attempt_marker = int(datetime.now(timezone.utc).timestamp())
+        reference_id = f"arvya-{payment_link.id}-{key[:6]}-{attempt_marker}"
         result = create_payment_link(amount_paise=amount, currency="INR", reference_id=reference_id, description=f"Arvya approved offer: {recommendation.title}", customer_name=request.customer_name, customer_email=request.customer_email, notes={"arvya_recommendation_id": str(recommendation.id), "arvya_payment_link_id": str(payment_link.id)})
         payment_link.razorpay_payment_link_id = result.get("id")
         payment_link.short_url = result.get("short_url")
         payment_link.status = result.get("status", "created")
-        payment_link.provider_response_json = {"id": result.get("id"), "short_url": result.get("short_url"), "status": result.get("status")}
+        payment_link.provider_response_json = {"id": result.get("id"), "short_url": result.get("short_url"), "status": result.get("status"), "expire_by": result.get("expire_by")}
         write_audit_log(db, recommendation.merchant_id, "payment_link_created", "payment_link", str(payment_link.id), f"Razorpay Test Mode payment link created for ₹{amount / 100:.2f}.", actor_type="system", actor_id="RazorpayPaymentAgent")
         db.commit()
         return payment_link
@@ -85,4 +94,4 @@ def retry_payment_link(db: Session, merchant_id: int, payment_link_id: int) -> P
     if payment_link.status not in {"execution_failed", "demo_created"}:
         raise HTTPException(status_code=409, detail="Only failed or demo payment links can be retried")
     request = CheckoutRequest(customer_name=payment_link.customer_name, customer_email=payment_link.customer_email, coupon_code=payment_link.coupon_code)
-    return create_checkout_link(db, payment_link.recommendation_id, request)
+    return create_checkout_link(db, payment_link.recommendation_id, request, existing_payment_link_id=payment_link.id)

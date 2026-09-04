@@ -92,5 +92,11 @@ def search_approved_offers(db: Session, query: str, budget_paise: int | None = N
     return {"query": query, "recommendation_summary": summary, "offers": results[:6]}
 
 
-def checkout_idempotency_key(recommendation_id: int, email: str, coupon_code: str | None) -> str:
-    return sha256(f"{recommendation_id}:{email.lower()}:{coupon_code or ''}".encode()).hexdigest()
+def checkout_idempotency_key(recommendation_id: int, email: str, coupon_code: str | None, checkout_token: str | None = None) -> str:
+    """Create a bounded key for one checkout attempt.
+
+    The browser supplies a different token for every deliberate checkout.  This
+    keeps a network retry idempotent without permanently reusing a past Razorpay
+    link merely because the customer chose the same offer with the same email.
+    """
+    return sha256(f"{recommendation_id}:{email.lower()}:{coupon_code or ''}:{checkout_token or ''}".encode()).hexdigest()

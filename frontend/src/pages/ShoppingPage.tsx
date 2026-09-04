@@ -1,17 +1,26 @@
 import { BadgeIndianRupee, CheckCircle2, ExternalLink, Search, Sparkles, Ticket, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { PaymentLink, ShoppingOffer, ShoppingSearchResponse } from "../types";
 
 const money = (paise: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(paise / 100);
 
-export function ShoppingPage({ result, searching, error, onSearch, onCheckout }: { result: ShoppingSearchResponse | null; searching: boolean; error: string | null; onSearch: (query: string, budget: string) => Promise<void>; onCheckout: (offer: ShoppingOffer, name: string, email: string) => Promise<PaymentLink | undefined> }) {
+export function ShoppingPage({ result, searching, error, onSearch, onCheckout }: { result: ShoppingSearchResponse | null; searching: boolean; error: string | null; onSearch: (query: string, budget: string) => Promise<void>; onCheckout: (offer: ShoppingOffer, name: string, email: string, idempotencyKey: string) => Promise<PaymentLink | undefined> }) {
   const [query, setQuery] = useState("skincare routine with sunscreen");
   const [budget, setBudget] = useState("1500");
   const [customerName, setCustomerName] = useState("Demo Customer");
   const [customerEmail, setCustomerEmail] = useState("customer@example.com");
   const [payment, setPayment] = useState<PaymentLink | null>(null);
+  const checkoutTokens = useRef<Record<number, string>>({});
   const submit = async (event: React.FormEvent) => { event.preventDefault(); setPayment(null); await onSearch(query, budget); };
-  const checkout = async (offer: ShoppingOffer) => { const next = await onCheckout(offer, customerName, customerEmail); if (next) setPayment(next); };
+  const checkout = async (offer: ShoppingOffer) => {
+    const idempotencyKey = checkoutTokens.current[offer.recommendation_id] ?? crypto.randomUUID();
+    checkoutTokens.current[offer.recommendation_id] = idempotencyKey;
+    const next = await onCheckout(offer, customerName, customerEmail, idempotencyKey);
+    if (next) {
+      setPayment(next);
+      delete checkoutTokens.current[offer.recommendation_id];
+    }
+  };
   return <div className="space-y-7"><section className="rounded-2xl border border-sky-200 bg-white p-7 shadow-sm sm:p-9"><p className="text-sm font-semibold uppercase tracking-[.18em] text-sky-600">Customer Shopping Agent</p><h2 className="mt-2 max-w-3xl text-3xl font-semibold tracking-tight">Find the best merchant-approved offer.</h2><p className="mt-3 max-w-3xl text-slate-500">Compare approved skincare, coffee, and fitness bundles. Arvya applies eligible merchant coupons before payment.</p><form onSubmit={submit} className="mt-6 grid gap-3 lg:grid-cols-[1fr_150px_auto]"><label className="sr-only" htmlFor="shopping-query">What are you looking for?</label><div className="relative"><Search size={17} className="absolute left-3 top-3 text-slate-500" /><input id="shopping-query" value={query} onChange={(event) => setQuery(event.target.value)} className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100" placeholder="Try: coffee beans, gym kit, or skincare routine" /></div><input value={budget} onChange={(event) => setBudget(event.target.value)} type="number" min="1" className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100" placeholder="Budget in ₹" /><button disabled={searching} className="rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60">{searching ? "Comparing…" : "Compare offers"}</button></form></section>{error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>}{result && <><section className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500 shadow-sm"><span className="font-medium text-slate-800">Agent reasoning:</span> {result.recommendation_summary}</section>{result.offers.length ? <div className="grid gap-5 xl:grid-cols-2">{result.offers.map((offer, index) => <OfferCard key={offer.recommendation_id} offer={offer} rank={index + 1} customerName={customerName} customerEmail={customerEmail} onCustomerName={setCustomerName} onCustomerEmail={setCustomerEmail} onCheckout={checkout} disabled={searching} />)}</div> : <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center"><Sparkles className="mx-auto text-sky-500" /><h3 className="mt-4 font-medium">No approved offers to compare yet</h3><p className="mt-2 text-sm text-slate-500">Try searches around skincare, coffee, or fitness. Merchants can also generate and approve additional offers.</p></div>}</>}{payment && <PaymentResult payment={payment} onClose={() => setPayment(null)} />}</div>;
 }
 

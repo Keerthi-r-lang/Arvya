@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_merchant
@@ -17,8 +17,8 @@ def search_offers(payload: ShoppingSearchRequest, db: Session = Depends(get_db))
 
 
 @router.post("/shopping/offers/{recommendation_id}/checkout", response_model=PaymentLinkResponse, status_code=201)
-def checkout(recommendation_id: int, payload: CheckoutRequest, db: Session = Depends(get_db)):
-    return create_checkout_link(db, recommendation_id, payload)
+def checkout(recommendation_id: int, payload: CheckoutRequest, x_idempotency_key: str | None = Header(default=None), db: Session = Depends(get_db)):
+    return create_checkout_link(db, recommendation_id, payload, checkout_token=x_idempotency_key)
 
 
 @router.get("/payment-links", response_model=list[PaymentLinkResponse])
