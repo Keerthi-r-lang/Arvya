@@ -29,6 +29,8 @@ Modern commerce has two gaps:
 
 Most AI commerce experiences stop at a chat response. They do not provide commercial controls, approval workflows, payment verification, or a durable decision record.
 
+For the complete visual model, see the [Arvya Diagram Pack](docs/DIAGRAMS.md).
+
 ## The solution
 
 **Arvya is a governed agentic commerce platform.** Buyer-facing and merchant-facing agents collaborate through a shared trust layer:
