@@ -5,3 +5,4 @@ pydantic>=2.9.0
 pydantic-settings>=2.5.0
 python-multipart>=0.0.12
 PyJWT>=2.9.0
+psycopg[binary]>=3.2.0

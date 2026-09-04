@@ -35,6 +35,8 @@ flowchart LR
 
 More detail: [architecture](docs/ARCHITECTURE.md) · [demo script](docs/DEMO_SCRIPT.md) · [deployment](docs/DEPLOYMENT.md) · [submission narrative](docs/SUBMISSION.md).
 
+For a permanent Razorpay webhook URL, the repository includes a [Render Blueprint](render.yaml) that deploys the backend with PostgreSQL. The stable endpoint becomes `https://YOUR-RENDER-SERVICE/api/v1/webhooks/razorpay`.
+
 ## What is implemented
 
 - Multi-step, specialist-agent workflow with durable action records and a visible reasoning trace.

@@ -16,3 +16,13 @@ def get_settings() -> Settings:
     # Read current local Test Mode configuration for each integration request so a demo
     # user can add keys without having to clear an in-memory settings cache.
     return Settings()
+
+
+def get_database_url() -> str:
+    """Normalize common managed-Postgres URLs for SQLAlchemy's psycopg driver."""
+    database_url = get_settings().database_url
+    if database_url.startswith("postgres://"):
+        return database_url.replace("postgres://", "postgresql+psycopg://", 1)
+    if database_url.startswith("postgresql://"):
+        return database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return database_url

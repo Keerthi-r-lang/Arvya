@@ -2,6 +2,18 @@
 
 ngrok is correct for a local Test Mode demo, but it is intentionally temporary. For the final submission or a production-style walkthrough, deploy the backend to a stable HTTPS domain and configure Razorpay once against that domain.
 
+## Included Render Blueprint
+
+This repository now includes [`render.yaml`](../render.yaml). It defines an `arvya-api` Docker web service and a managed `arvya-db` PostgreSQL database. In Render, create a **Blueprint** from the GitHub repository, enter the requested secrets, and deploy. Render will give the backend a stable `https://...onrender.com` address.
+
+Set `FRONTEND_ORIGIN` to the final frontend address. After deployment, set Razorpay’s Test Mode webhook URL to:
+
+```text
+https://YOUR-RENDER-SERVICE/api/v1/webhooks/razorpay
+```
+
+The backend accepts Render's common `postgres://` or `postgresql://` connection strings and normalizes them for the bundled psycopg driver.
+
 ## Recommended simple topology
 
 | Layer | Suggested host | Notes |
