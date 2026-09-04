@@ -16,7 +16,7 @@ export function AppShell({ merchant, activePage, onNavigate, onLogout, theme, on
         <Nav icon={<BarChart3 size={18} />} label="Campaigns" muted />
         <Nav icon={<BookOpenCheck size={18} />} label="Audit trail" active={activePage === "audit"} onClick={() => onNavigate("audit")} />
       </nav>
-      <p className="absolute bottom-6 text-xs text-slate-500">MVP build · Day 4</p>
+      <p className="absolute bottom-6 text-xs text-slate-500">Buildathon MVP · Trusted commerce</p>
     </aside>
     <main className="lg:ml-64">
       <header className="flex h-20 items-center justify-between border-b border-white/10 px-6 lg:px-10"><div><p className="text-sm text-slate-400">Merchant workspace</p><h1 className="font-semibold">{merchant.name}</h1></div><div className="flex items-center gap-3"><span className="hidden rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300 sm:inline">Demo mode</span><button aria-label="Toggle color theme" onClick={onThemeToggle} className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-400 hover:bg-white/5 hover:text-white">{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button><button onClick={onLogout} className="text-sm text-slate-400 hover:text-white">Sign out</button></div></header>

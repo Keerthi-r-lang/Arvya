@@ -1,31 +1,98 @@
-# Arvya Growth Agent
+# Arvya — Governed AI Commerce for Merchant Growth
 
-Arvya is a governed AI-commerce workspace: agents propose merchant growth offers, merchants approve them, customers discover the approved offers, and Razorpay Test Mode closes the payment loop.
+Arvya turns a merchant catalog into governed revenue opportunities. Its specialist agents propose bundles, upsells, and campaign ideas; the merchant reviews every commercial decision; customers discover only approved offers; Razorpay Test Mode completes and reconciles payment.
+
+## Why Arvya
+
+Merchants do not need another generic chatbot. They need an accountable system that can turn catalog data into offers while protecting their margin, brand, and customers.
+
+- **Growth side:** catalog-aware bundle, upsell, and campaign opportunities with evidence and directional impact assumptions.
+- **Commerce side:** customers compare merchant-approved offers, receive eligible coupons, and get a Razorpay payment link.
+- **Trust side:** approval before execution, deterministic price validation, idempotent payment-link creation, signed webhooks, and an append-only audit history.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    C[Merchant catalog] --> O[Growth Orchestrator]
+    O --> CA[Catalog Analysis]
+    O --> BA[Bundle Discovery]
+    O --> UA[Upsell Agent]
+    O --> CMA[Campaign Agent]
+    O --> IA[Impact Estimation]
+    CA --> R[Explainable recommendation]
+    BA --> R
+    UA --> R
+    CMA --> R
+    IA --> R
+    R --> H{Merchant approval}
+    H -- Reject --> A[Audit trail]
+    H -- Approve --> S[Customer Shopping Agent]
+    S --> P[Razorpay Test Mode payment link]
+    P --> W[Signed Razorpay webhook]
+    W --> L[Payment ledger + audit trail]
+```
+
+More detail: [architecture](docs/ARCHITECTURE.md) · [demo script](docs/DEMO_SCRIPT.md) · [deployment](docs/DEPLOYMENT.md) · [submission narrative](docs/SUBMISSION.md).
+
+## What is implemented
+
+- Multi-step, specialist-agent workflow with durable action records and a visible reasoning trace.
+- Explainable recommendations: catalog signals, margin-safe price, confidence, assumptions, and expected uplift.
+- Merchant approval/edit/reject controls before an offer is customer-visible or payment-enabled.
+- Customer Shopping Agent across skincare, coffee, and fitness catalogs.
+- Merchant coupons, server-side payable-price validation, and idempotent Razorpay payment links.
+- Razorpay webhook HMAC validation, event-ID deduplication, payment reconciliation, safe retry, and payment operations dashboard.
+- Light/dark workspace, payment ledger, revenue metrics, and an append-only audit timeline.
 
 ## Run locally
 
-1. In `backend`, create a virtual environment and install `requirements.txt`.
-2. Create `backend/.env` locally and add Razorpay **Test Mode** values for `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and `RAZORPAY_WEBHOOK_SECRET`. Never commit API secrets or place them in `.env.example`; without the API keys Arvya runs an explicitly labelled demo checkout.
-3. Start the API with `uvicorn app.main:app --reload --port 8000`.
-4. In `frontend`, install packages with `npm.cmd install` and start with `npm.cmd run dev`.
+### Backend
 
-The application seeds three demo merchants and catalogs when the backend first starts.
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+```
 
-## Demo flow
+Create `backend/.env` locally. Never commit this file or any real secret.
 
-1. Sign in as a merchant and generate growth opportunities.
-2. Approve a bundle or upsell in **Growth opportunities**.
-3. Open **Shopping agent** and search for a relevant customer need.
-4. Select a merchant-approved offer to apply the merchant coupon and create a payment link.
-5. Complete the Razorpay Test Mode payment, then use **Payment links** to show the reconciled status and **Audit trail** to show the verified event.
+```env
+DATABASE_URL=sqlite:///./arvya.db
+JWT_SECRET=replace-for-production
+FRONTEND_ORIGIN=http://localhost:5173
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=...
+RAZORPAY_WEBHOOK_SECRET=your_private_webhook_secret
+```
 
-## Razorpay webhook setup
+### Frontend
 
-Payment-link creation confirms only that a checkout URL exists. A webhook is the trusted server-to-server event that confirms the eventual payment result.
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd run dev
+```
 
-1. Give the backend a public HTTPS URL while demoing locally (for example, using your preferred secure tunnel).
-2. In the Razorpay Test Mode dashboard, create a webhook targeting `https://YOUR-PUBLIC-URL/api/v1/webhooks/razorpay`.
-3. Subscribe to `payment_link.paid`, `payment_link.partially_paid`, and `payment_link.cancelled`.
-4. Copy that webhook secret into `backend/.env` as `RAZORPAY_WEBHOOK_SECRET` and restart the backend.
+The backend seeds demo merchants and catalog data automatically on first run.
 
-Arvya verifies the raw webhook signature, deduplicates the Razorpay event ID, records an audit entry, and then updates the merchant payment ledger. The endpoint is intentionally public but does not accept unsigned events.
+## Razorpay webhook verification
+
+The webhook endpoint is:
+
+```text
+POST /api/v1/webhooks/razorpay
+```
+
+For local development, expose the backend with a secure tunnel:
+
+```powershell
+ngrok http 8000
+```
+
+Register `https://YOUR-ACTIVE-NGROK-DOMAIN/api/v1/webhooks/razorpay` in Razorpay **Test Mode** and subscribe to `payment_link.paid`, `payment_link.partially_paid`, and `payment_link.cancelled`. Use the same secret in Razorpay and `RAZORPAY_WEBHOOK_SECRET`.
+
+Opening the same endpoint in a browser is also safe: `GET /api/v1/webhooks/razorpay` returns readiness information, while payment events are accepted only as signed `POST` requests.
+
+## Judge demo in one sentence
+
+**“Arvya is a governed AI-commerce operating layer: it turns a merchant catalog into explainable offers, requires merchant approval before money movement, and proves the final payment result through Razorpay-signed events.”**

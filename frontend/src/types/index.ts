@@ -73,6 +73,21 @@ export type AgentRun = {
   completed_at: string | null;
 };
 
+export type AgentAction = {
+  id: number;
+  agent_run_id: number;
+  recommendation_id: number | null;
+  agent_name: string;
+  action_type: string;
+  status: string;
+  input_summary_json: Record<string, unknown>;
+  output_summary_json: Record<string, unknown>;
+  tools_used_json: string[];
+  reasoning_summary: string;
+  started_at: string;
+  completed_at: string;
+};
+
 export type ShoppingOffer = {
   recommendation_id: number;
   merchant_id: number;
