@@ -10,7 +10,7 @@ Small and mid-sized merchants have catalog, inventory, and margin data, but stru
 
 ## Solution
 
-Arvya uses a specialist-agent workflow to propose bundle, upsell, and campaign opportunities. It keeps recommendations separate from execution: the merchant approves every offer before it can appear to a customer or generate a payment link. The Customer Shopping Agent then compares approved offers and applies eligible coupons. Razorpay payment links and signed webhooks close the loop.
+Arvya uses a specialist-agent workflow to propose bundle, upsell, and campaign opportunities. Campaign drafts have their own control center with evidence, copy, and approval/rejection states; no campaign is auto-sent. The system keeps recommendations separate from execution: the merchant approves every offer before it can appear to a customer or generate a payment link. The Customer Shopping Agent then compares approved offers and applies eligible coupons. Razorpay payment links and signed webhooks close the loop.
 
 ## Differentiation
 

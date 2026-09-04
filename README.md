@@ -40,6 +40,7 @@ More detail: [architecture](docs/ARCHITECTURE.md) · [demo script](docs/DEMO_SCR
 - Multi-step, specialist-agent workflow with durable action records and a visible reasoning trace.
 - Explainable recommendations: catalog signals, margin-safe price, confidence, assumptions, and expected uplift.
 - Merchant approval/edit/reject controls before an offer is customer-visible or payment-enabled.
+- Campaign control center with agent-drafted copy, evidence, approval, and an explicit no-auto-send guardrail.
 - Customer Shopping Agent across skincare, coffee, and fitness catalogs.
 - Merchant coupons, server-side payable-price validation, and idempotent Razorpay payment links.
 - Razorpay webhook HMAC validation, event-ID deduplication, payment reconciliation, safe retry, and payment operations dashboard.

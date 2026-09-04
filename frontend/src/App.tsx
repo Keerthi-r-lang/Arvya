@@ -6,6 +6,7 @@ import { checkoutOffer, searchApprovedOffers } from "./api/shopping";
 import { AppShell } from "./components/layout/AppShell";
 import { DashboardPage } from "./pages/DashboardPage";
 import { CatalogPage } from "./pages/CatalogPage";
+import { CampaignsPage } from "./pages/CampaignsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RecommendationsPage } from "./pages/RecommendationsPage";
 import { ShoppingPage } from "./pages/ShoppingPage";
@@ -13,7 +14,7 @@ import { PaymentLinksPage } from "./pages/PaymentLinksPage";
 import { AuditTrailPage } from "./pages/AuditTrailPage";
 import type { AgentAction, AuditLog, CatalogSummary, CommerceMetrics, Merchant, PaymentLink, Product, Recommendation, ShoppingOffer, ShoppingSearchResponse } from "./types";
 
-type Page = "dashboard" | "catalog" | "recommendations" | "shopping" | "payments" | "audit";
+type Page = "dashboard" | "catalog" | "recommendations" | "campaigns" | "shopping" | "payments" | "audit";
 type Theme = "dark" | "light";
 
 export default function App() {
@@ -61,6 +62,7 @@ export default function App() {
   if (page === "dashboard") content = <DashboardPage merchant={merchant} summary={summary} metrics={metrics} activity={activity} onOpenCatalog={() => setPage("catalog")} onGenerate={handleGenerate} generating={agentLoading} />;
   if (page === "catalog") content = <CatalogPage products={products} summary={summary} onUpload={handleUpload} onBack={() => setPage("dashboard")} message={message} />;
   if (page === "recommendations") content = <RecommendationsPage recommendations={recommendations} agentActions={agentActions} loading={agentLoading} error={error} onGenerate={handleGenerate} onApprove={handleApprove} onReject={handleReject} />;
+  if (page === "campaigns") content = <CampaignsPage campaigns={recommendations.filter((recommendation) => recommendation.type === "campaign")} loading={agentLoading} onGenerate={handleGenerate} onApprove={handleApprove} onReject={handleReject} />;
   if (page === "payments") content = <PaymentLinksPage links={paymentLinks} loading={paymentLoading} onRetry={handlePaymentRetry} />;
   if (page === "audit") content = <AuditTrailPage events={auditLogs} />;
   return <AppShell merchant={merchant} activePage={page} onNavigate={(target) => { setPage(target); setMessage(null); setError(null); }} onLogout={logout} theme={theme} onThemeToggle={toggleTheme}>{content}</AppShell>;

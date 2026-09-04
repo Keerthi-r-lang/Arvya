@@ -1,7 +1,7 @@
 import { BarChart3, BookOpenCheck, Boxes, CreditCard, LayoutDashboard, Moon, Search, Sparkles, Sun } from "lucide-react";
 import type { Merchant } from "../../types";
 
-type Props = { merchant: Merchant; activePage: "dashboard" | "catalog" | "recommendations" | "shopping" | "payments" | "audit"; onNavigate: (page: "dashboard" | "catalog" | "recommendations" | "shopping" | "payments" | "audit") => void; onLogout: () => void; theme: "dark" | "light"; onThemeToggle: () => void; children: React.ReactNode };
+type Props = { merchant: Merchant; activePage: "dashboard" | "catalog" | "recommendations" | "campaigns" | "shopping" | "payments" | "audit"; onNavigate: (page: "dashboard" | "catalog" | "recommendations" | "campaigns" | "shopping" | "payments" | "audit") => void; onLogout: () => void; theme: "dark" | "light"; onThemeToggle: () => void; children: React.ReactNode };
 
 export function AppShell({ merchant, activePage, onNavigate, onLogout, theme, onThemeToggle, children }: Props) {
   return <div className={`min-h-screen bg-slate-950 text-slate-100 ${theme === "light" ? "theme-light" : ""}`}>
@@ -13,7 +13,7 @@ export function AppShell({ merchant, activePage, onNavigate, onLogout, theme, on
         <Nav icon={<Sparkles size={18} />} label="Growth opportunities" active={activePage === "recommendations"} onClick={() => onNavigate("recommendations")} />
         <Nav icon={<Search size={18} />} label="Shopping agent" active={activePage === "shopping"} onClick={() => onNavigate("shopping")} />
         <Nav icon={<CreditCard size={18} />} label="Payment links" active={activePage === "payments"} onClick={() => onNavigate("payments")} />
-        <Nav icon={<BarChart3 size={18} />} label="Campaigns" muted />
+        <Nav icon={<BarChart3 size={18} />} label="Campaigns" active={activePage === "campaigns"} onClick={() => onNavigate("campaigns")} />
         <Nav icon={<BookOpenCheck size={18} />} label="Audit trail" active={activePage === "audit"} onClick={() => onNavigate("audit")} />
       </nav>
       <p className="absolute bottom-6 text-xs text-slate-500">Buildathon MVP · Trusted commerce</p>
